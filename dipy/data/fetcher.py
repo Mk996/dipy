@@ -549,15 +549,16 @@ fetch_qtdMRI_test_retest_2subjects = _make_fetcher(
 fetch_gold_standard_io = _make_fetcher(
     "fetch_gold_standard_io",
     pjoin(dipy_home, 'gold_standard_io'),
-    'https://zenodo.org/record/2651349/files/',
-    ['gs.trk', 'gs.tck', 'gs.fib', 'gs.dpy', 'gs.nii', 'gs_3mm.nii',
+    'https://zenodo.org/record/7767654/files/',
+    ['gs.trk', 'gs.tck', 'gs.trx', 'gs.fib', 'gs.dpy', 'gs.nii', 'gs_3mm.nii',
      'gs_rasmm_space.txt', 'gs_voxmm_space.txt', 'gs_vox_space.txt',
      'points_data.txt', 'streamlines_data.txt'],
-    ['gs.trk', 'gs.tck', 'gs.fib', 'gs.dpy', 'gs.nii', 'gs_3mm.nii',
+    ['gs.trk', 'gs.tck', 'gs.trx', 'gs.fib', 'gs.dpy', 'gs.nii', 'gs_3mm.nii',
      'gs_rasmm_space.txt', 'gs_voxmm_space.txt', 'gs_vox_space.txt',
      'points_data.json', 'streamlines_data.json'],
     ['3acf565779f4d5107f96b2ef90578d64',
      '151a30cf356c002060d720bf9d577245',
+     'a6587f1a3adc4df076910c4d72eb4161',
      'e9818e07bef5bd605dea0877df14a2b0',
      '248606297e400d1a9b1786845aad8de3',
      'a2d4d8f62d1de0ab9927782c7d51cb27',
@@ -1299,7 +1300,7 @@ def read_mni_template(version="a", contrast="T2"):
     if contrast == "mask" and version == "a":
         raise ValueError("No template mask available for MNI 2009a")
 
-    if not isinstance(contrast, str) and version == "c":
+    if not (isinstance(contrast, str)) and version == "c":
         for k in contrast:
             if k == "T2":
                 raise ValueError("No T2 image for MNI template 2009c")
@@ -1998,6 +1999,8 @@ def fetch_hbn(subjects, path=None):
         if query_content is None:
             raise ValueError(
                 f"Could not find derivatives data for subject {subject}")
+            raise ValueError(
+                f"Could not find derivatives data for subject {subject}")
         file_list = [kk["Key"] for kk in query["Contents"]]
         sub_dir = op.join(base_dir, f'sub-{subject}')
         ses_dir = op.join(sub_dir, ses)
@@ -2007,7 +2010,7 @@ def fetch_hbn(subjects, path=None):
         for remote in file_list:
             full = remote.split(
                 "Projects")[-1][1:].replace("/BIDS_curated", "")
-            local = op.join(my_path, full)
+            local = op.join(dipy_home, full)
             data_files[local] = remote
 
     download_files = {}
