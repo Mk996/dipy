@@ -46,10 +46,10 @@ number of volumes to 5. However, we do not recommended to perform a motion
 correction with less than 10 volumes.
 """
 
-data_small = data[..., :3]
-bvals_small = bvals[:3]
-bvecs_small = bvecs[:3]
-gtab = gradient_table(bvals_small, bvecs_small)
+data_small = data[..., :5]
+bvals_small = bvals[:5]
+bvecs_small = bvecs[:5, ...]
+gtab = gradient_table(bvals, bvecs)
 
 """
 Start motion correction of our reduced DWI dataset(between-volumes motion
@@ -62,8 +62,7 @@ data_corrected, reg_affines = motion_correction(data_small, gtab, affine)
 Save our DWI dataset corrected to a new Nifti file.
 """
 
-save_nifti('motion_correction.nii.gz', data_corrected.get_fdata(),
-           data_corrected.affine)
+save_nifti('motion_correction.nii.gz', data_corrected.get_fdata(), data_corrected.affine)
 
 """
 References
