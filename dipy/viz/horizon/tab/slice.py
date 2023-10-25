@@ -6,6 +6,7 @@ import numpy as np
 from dipy.utils.optpkg import optional_package
 from dipy.viz.horizon.tab import (HorizonTab, build_label, build_slider,
                                   build_switcher, build_checkbox)
+from dipy.viz.horizon.util import fetch_centered_value
 
 fury, has_fury, setup_module = optional_package('fury')
 
@@ -216,19 +217,26 @@ class SlicesTab(HorizonTab):
     def _change_slice_value(
             self, slider, selected_slice, sync_slice=False):
         selected_slice.selected_value = int(np.rint(slider.value))
+
         if not sync_slice:
-            self.on_slice_change(
-                self._tab_id,
-                self._slice_x.selected_value,
-                self._slice_y.selected_value,
-                self._slice_z.selected_value
-            )
+            (x, y, z), _ = self._calculate_centered_values()
+            self.on_slice_change(self._tab_id, x, y, z)
+
         self._visualize_slice_x(x1=self._slice_x.selected_value,
                                 x2=self._slice_x.selected_value)
         self._visualize_slice_y(y1=self._slice_y.selected_value,
                                 y2=self._slice_y.selected_value)
         self._visualize_slice_z(z1=self._slice_z.selected_value,
                                 z2=self._slice_z.selected_value)
+
+    def _calculate_centered_values(self):
+        x, x_mid = fetch_centered_value((0, self._visualizer.data_shape[0]),
+                                        self._slice_x.selected_value)
+        y, y_mid = fetch_centered_value((0, self._visualizer.data_shape[1]),
+                                        self._slice_y.selected_value)
+        z, z_mid = fetch_centered_value((0, self._visualizer.data_shape[2]),
+                                        self._slice_z.selected_value)
+        return (x, y, z), (x_mid, y_mid, z_mid)
 
     def _update_slice_visibility(
             self, checkboxes, selected_slice, actor, visibility=None):
@@ -327,12 +335,13 @@ class SlicesTab(HorizonTab):
         Parameters
         ----------
         x_slice: float
-            x-value where the slicer should be placed
+            x-value where the slicer should be placed relative to center
         y_slice: float
-            y-value where the slicer should be placed
+            y-value where the slicer should be placed relative to center
         z_slice: float
-            z-value where the slicer should be placed
+            z-value where the slicer should be placed relative to center
         """
+        val, cen = self._calculate_centered_values()
         if not self._slice_x.obj.value == x_slice:
             self._slice_x.obj.value = x_slice
 
