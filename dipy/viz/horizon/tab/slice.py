@@ -341,7 +341,7 @@ class SlicesTab(HorizonTab):
         z_slice: float
             z-value where the slicer should be placed relative to center
         """
-        val, cen = self._calculate_centered_values()
+        # val, cen = self._calculate_centered_values()
         if not self._slice_x.obj.value == x_slice:
             self._slice_x.obj.value = x_slice
 

@@ -80,7 +80,7 @@ class TabManager:
     tab_ui : TabUI
         Underlying FURY TabUI object.
     """
-    def __init__(self, tabs, win_size, synchronize_slices=True):
+    def __init__(self, tabs, win_size, synchronize_slices=False):
         num_tabs = len(tabs)
         self._tabs = tabs
         self._synchronize_slices = synchronize_slices

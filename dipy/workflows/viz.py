@@ -28,7 +28,7 @@ class HorizonFlow(Workflow):
     def run(self, input_files, cluster=False, cluster_thr=15.,
             random_colors=None, length_gt=0, length_lt=1000,
             clusters_gt=0, clusters_lt=10**8, native_coords=False,
-            stealth=False, emergency_header='icbm_2009a', bg_color=(0, 0, 0),
+            stealth=False, emergency_header='icbm_2009a', bg_color=(1, 1, 1),
             disable_order_transparency=False, buan=False, buan_thr=0.5,
             buan_highlight=(1, 0, 0), roi_images=False, roi_colors=(1, 0, 0),
             out_dir='', out_stealth_png='tmp.png'):

@@ -32,6 +32,8 @@ class SlicesVisualizer:
 
         print(f'Original shape: {self.__data_shape}')
 
+        scene.add(actor.point(np.array([[0, 0, 0]]), (1, 0, 0), point_radius=1))
+
         vol_data = self.__data
         if self.__data_ndim == 4:
             for i in range(self.__data.shape[-1]):
@@ -80,6 +82,7 @@ class SlicesVisualizer:
             visible_slices[2], visible_slices[2])
 
         for act in self.__slice_actors:
+            act.SetPosition((abs(self.__affine[0][3]), abs(self.__affine[1][3]), abs(self.__affine[2][3])))
             self.__scene.add(act)
 
     def __create_and_resize_actors(self, vol_data, value_range):
