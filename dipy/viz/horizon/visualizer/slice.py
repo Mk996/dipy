@@ -68,6 +68,8 @@ class SlicesVisualizer:
         self.__picker_callback = None
         self.__picked_voxel_actor = None
 
+        self.position_slice_actors()
+
     def __add_slice_actors_to_scene(self, visible_slices):
         self.__slice_actors[0].display_extent(
             visible_slices[0], visible_slices[0], 0, self.__data_shape[1] - 1,
@@ -82,8 +84,17 @@ class SlicesVisualizer:
             visible_slices[2], visible_slices[2])
 
         for act in self.__slice_actors:
-            act.SetPosition((abs(self.__affine[0][3]), abs(self.__affine[1][3]), abs(self.__affine[2][3])))
             self.__scene.add(act)
+
+    def position_slice_actors(self, max_range=np.array([197, 233, 193])):
+        max_range_center = (max_range / 2).astype(np.int32)
+        current_center = (np.array(self.__data_shape[:3]) / 2).astype(np.int32)
+
+        for act in self.__slice_actors:
+            position = np.array(act.GetPosition())
+            position += -1*self.__affine[:3, 3]
+            position += max_range_center - current_center
+            act.SetPosition(tuple(position))
 
     def __create_and_resize_actors(self, vol_data, value_range):
         self.__slice_actors[0] = actor.slicer(

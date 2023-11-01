@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from dipy.utils.optpkg import optional_package
+from dipy.viz.horizon.util import select_deselect_actors
 
 fury, has_fury, setup_module = optional_package('fury')
 
@@ -80,7 +81,7 @@ class TabManager:
     tab_ui : TabUI
         Underlying FURY TabUI object.
     """
-    def __init__(self, tabs, win_size, synchronize_slices=False):
+    def __init__(self, tabs, win_size, synchronize_slices):
         num_tabs = len(tabs)
         self._tabs = tabs
         self._synchronize_slices = synchronize_slices
@@ -105,6 +106,9 @@ class TabManager:
 
         self.tab_changed = lambda actors: None
 
+        self._slice_space = np.array([0, 0, 0])
+        self._calculate_slice_space()
+
         for tab_id, tab in enumerate(tabs):
             self._tab_ui.tabs[tab_id].title = ' ' + tab.name
             self._tab_ui.tabs[tab_id].title_font_size = 18
@@ -112,6 +116,16 @@ class TabManager:
             if tab.__class__.__name__ == 'SlicesTab':
                 tab.on_slice_change = self.synchronize_slices
                 self._render_tab_elements(tab_id, tab.elements)
+
+        current_tab = self._tabs[self._active_tab_id]
+        if current_tab.__class__.__name__ == 'SlicesTab':
+            select_deselect_actors(current_tab.actors)
+
+    def _calculate_slice_space(self):
+        slice_tabs = list(filter(lambda x: x.__class__.__name__ == 'SlicesTab',
+                                 self._tabs))
+        for tab in slice_tabs:
+            self._slice_space = np.maximum(self._slice_space, tab.shapes)
 
     def _render_tab_elements(self, tab_id, elements):
         for element in elements:
@@ -122,10 +136,14 @@ class TabManager:
                 self._tab_ui.add_element(tab_id, element.obj, element.position)
 
     def _tab_selected(self, tab_ui):
-        self._active_tab_id = tab_ui.active_tab_idx
-
         current_tab = self._tabs[self._active_tab_id]
         if current_tab.__class__.__name__ == 'SlicesTab':
+            select_deselect_actors(current_tab.actors, -0.001)
+
+        self._active_tab_id = tab_ui.active_tab_idx
+        current_tab = self._tabs[self._active_tab_id]
+        if current_tab.__class__.__name__ == 'SlicesTab':
+            select_deselect_actors(current_tab.actors)
             self.tab_changed(current_tab.actors)
 
     def reposition(self, win_size):
@@ -160,13 +178,14 @@ class TabManager:
         if not self._synchronize_slices:
             return
 
+        # print("I am synchronizing")
         slices_tabs = list(
             filter(
                 lambda x: x.__class__.__name__ == 'SlicesTab'
                 and not x.tab_id == active_tab_id, self._tabs
             )
         )
-
+        # print(x_value, y_value, z_value)
         for slices_tab in slices_tabs:
             slices_tab.update_slices(x_value, y_value, z_value)
 

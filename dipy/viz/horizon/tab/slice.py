@@ -6,7 +6,7 @@ import numpy as np
 from dipy.utils.optpkg import optional_package
 from dipy.viz.horizon.tab import (HorizonTab, build_label, build_slider,
                                   build_switcher, build_checkbox)
-from dipy.viz.horizon.util import fetch_centered_value
+from dipy.viz.horizon.util import center_relative_value, zero_relative_value
 
 fury, has_fury, setup_module = optional_package('fury')
 
@@ -34,6 +34,8 @@ class SlicesTab(HorizonTab):
 
         self._force_render = force_render
         self._tab_id = 0
+
+        self._slice_space = self._visualizer.data_shape[:3]
 
         self.on_slice_change = lambda _tab_id, _x, _y, _z: None
 
@@ -219,7 +221,12 @@ class SlicesTab(HorizonTab):
         selected_slice.selected_value = int(np.rint(slider.value))
 
         if not sync_slice:
-            (x, y, z), _ = self._calculate_centered_values()
+            x = center_relative_value(self._slice_x.selected_value,
+                                      (0, self._visualizer.data_shape[0] - 1))
+            y = center_relative_value(self._slice_y.selected_value,
+                                      (0, self._visualizer.data_shape[1] - 1))
+            z = center_relative_value(self._slice_z.selected_value,
+                                      (0, self._visualizer.data_shape[2] - 1))
             self.on_slice_change(self._tab_id, x, y, z)
 
         self._visualize_slice_x(x1=self._slice_x.selected_value,
@@ -229,17 +236,9 @@ class SlicesTab(HorizonTab):
         self._visualize_slice_z(z1=self._slice_z.selected_value,
                                 z2=self._slice_z.selected_value)
 
-    def _calculate_centered_values(self):
-        x, x_mid = fetch_centered_value((0, self._visualizer.data_shape[0]),
-                                        self._slice_x.selected_value)
-        y, y_mid = fetch_centered_value((0, self._visualizer.data_shape[1]),
-                                        self._slice_y.selected_value)
-        z, z_mid = fetch_centered_value((0, self._visualizer.data_shape[2]),
-                                        self._slice_z.selected_value)
-        return (x, y, z), (x_mid, y_mid, z_mid)
-
     def _update_slice_visibility(
-            self, checkboxes, selected_slice, actor, visibility=None):
+            self, checkboxes, selected_slice, actor, visibility=None,
+            only_actor=False):
 
         if checkboxes is not None and '' in checkboxes.checked_labels:
             visibility = True
@@ -247,7 +246,8 @@ class SlicesTab(HorizonTab):
             visibility = False
 
         selected_slice.visibility = visibility
-        selected_slice.obj.set_visibility(visibility)
+        if not only_actor:
+            selected_slice.obj.set_visibility(visibility)
         actor.SetVisibility(visibility)
 
     def _change_volume(self, slider):
@@ -341,15 +341,46 @@ class SlicesTab(HorizonTab):
         z_slice: float
             z-value where the slicer should be placed relative to center
         """
-        # val, cen = self._calculate_centered_values()
-        if not self._slice_x.obj.value == x_slice:
-            self._slice_x.obj.value = x_slice
+        x = zero_relative_value(x_slice,
+                                (0, self._visualizer.data_shape[0] - 1))
+        y = zero_relative_value(y_slice,
+                                (0, self._visualizer.data_shape[1] - 1))
+        z = zero_relative_value(z_slice,
+                                (0, self._visualizer.data_shape[2] - 1))
+        if not self._slice_x.obj.value == x:
+            self._update_slice_visibility(None, self._slice_x, self.actors[0], only_actor=True)
+            if x < 0:
+                x = 0
+            elif x >= self._visualizer.data_shape[0]:
+                x = self._visualizer.data_shape[0] - 1
+            else:
+                self._update_slice_visibility(None, self._slice_x,
+                                              self.actors[0], True, True)
+            self._slice_x.obj.value = x
 
-        if not self._slice_y.obj.value == y_slice:
-            self._slice_y.obj.value = y_slice
+        if not self._slice_y.obj.value == y:
+            self._update_slice_visibility(None, self._slice_y, self.actors[1], only_actor=True)
+            if y < 0:
+                y = 0
+            elif y >= self._visualizer.data_shape[1]:
+                y = self._visualizer.data_shape[1] - 1
+            else:
+                self._update_slice_visibility(None, self._slice_y, self.actors[1], True, True)
+            self._slice_y.obj.value = y
 
-        if not self._slice_z.obj.value == z_slice:
-            self._slice_z.obj.value = z_slice
+        if not self._slice_z.obj.value == z:
+            self._update_slice_visibility(None, self._slice_z, self.actors[2], only_actor=True)
+            if z < 0:
+                z = 0
+            elif z >= self._visualizer.data_shape[2]:
+                z = self._visualizer.data_shape[2] - 1
+            else:
+                self._update_slice_visibility(None, self._slice_z, self.actors[2], True, True)
+            self._slice_z.obj.value = z
+
+    # def _update_synchronization(value, slice, actor, shape):
+    #     c = zero_relative_value(value,
+    #                             (0, self._visualizer.data_shape[0] - 1))
 
     def build(self, tab_id, _tab_ui):
         """Build all the elements under the tab.
@@ -417,6 +448,12 @@ class SlicesTab(HorizonTab):
 
     @property
     def actors(self):
-        """visualization actors controlled by tab.
+        """Visualization actors controlled by tab.
         """
         return self._visualizer.slice_actors
+
+    @property
+    def shapes(self):
+        """Visualization actor shapes.
+        """
+        return np.array(self._visualizer.data_shape[:3])

@@ -1,5 +1,6 @@
 """Utility functions for horizon.
 """
+import numpy as np
 
 
 def check_img_shapes(images):
@@ -18,19 +19,59 @@ def check_img_shapes(images):
     return True
 
 
-def fetch_centered_value(value_range, current_value):
-    """Calculate current value relative to center.
+def select_deselect_actors(actors, elevation=0.001):
+    """Push actors to front by the elevation.
 
     Parameters
     ----------
-    value_range : (float, float)
-        min and max value of the value_range
-    current_value : float
-        current value on zero based scale
-
-    Return
-    ------
-    (current_value: float, mid: float)
+    actors : list(actor)
+        list of actors which needs to be on front or pushed back.
+    elevation: float, optional
+        value with which the actors should be brought to front or pushed back,
+        by default 0.001.
+        To push it back provide elevation < 0 values.
     """
-    mid = (value_range[0] + value_range[1]) / 2
-    return (current_value - mid, mid)
+    for act in actors:
+        act.SetPosition(
+            tuple(
+                np.array(act.GetPosition()) + elevation
+            )
+        )
+
+
+def center_relative_value(value, value_range):
+    """Calculate center relative value of the min_value based quantity.
+
+    Parameters
+    ----------
+    value : int
+        min_value base quantity.
+    value_range : tuple
+        tuple of (min_value, max_value).
+
+    Returns
+    -------
+    int
+        center relative value.
+    """
+    mid = int((value_range[0] + value_range[1]) / 2)
+    return value - mid
+
+
+def zero_relative_value(value, value_range):
+    """Calculate zero relative value of the center relative quantity.
+
+    Parameters
+    ----------
+    value : int
+        center relative quantity.
+    value_range : tuple
+        tuple of (min_value, max_value).
+
+    Returns
+    -------
+    int
+        center relative value.
+    """
+    mid = int((value_range[0] + value_range[1]) / 2)
+    return mid + value
