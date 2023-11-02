@@ -49,7 +49,7 @@ class SlicesTab(HorizonTab):
 
         self._slice_x_label, self._slice_x = build_slider(
             initial_value=self._visualizer.selected_slices[0],
-            max_value=self._visualizer.data_shape[0] - 1,
+            max_value=self.shapes[0] - 1,
             text_template='{value:.0f}',
             label='X Slice'
         )
@@ -61,8 +61,8 @@ class SlicesTab(HorizonTab):
                                        sync_slice=True)
         self._visualize_slice_x = partial(
             self._visualizer.slice_actors[0].display_extent,
-            y1=0, y2=self._visualizer.data_shape[1] - 1,
-            z1=0, z2=self._visualizer.data_shape[2] - 1)
+            y1=0, y2=self.shapes[1] - 1,
+            z1=0, z2=self.shapes[2] - 1)
 
         self._slice_x.obj.on_value_changed = self._adjust_slice_x
         self._slice_x.obj.on_moving_slider = self._change_slice_x
@@ -78,7 +78,7 @@ class SlicesTab(HorizonTab):
 
         self._slice_y_label, self._slice_y = build_slider(
             initial_value=self._visualizer.selected_slices[1],
-            max_value=self._visualizer.data_shape[1] - 1,
+            max_value=self.shapes[1] - 1,
             text_template='{value:.0f}',
             label='Y Slice'
         )
@@ -90,8 +90,8 @@ class SlicesTab(HorizonTab):
                                        sync_slice=True)
         self._visualize_slice_y = partial(
             self._visualizer.slice_actors[1].display_extent,
-            x1=0, x2=self._visualizer.data_shape[0] - 1,
-            z1=0, z2=self._visualizer.data_shape[2] - 1)
+            x1=0, x2=self.shapes[0] - 1,
+            z1=0, z2=self.shapes[2] - 1)
 
         self._slice_y.obj.on_value_changed = self._adjust_slice_y
         self._slice_y.obj.on_moving_slider = self._change_slice_y
@@ -107,7 +107,7 @@ class SlicesTab(HorizonTab):
 
         self._slice_z_label, self._slice_z = build_slider(
             initial_value=self._visualizer.selected_slices[2],
-            max_value=self._visualizer.data_shape[2] - 1,
+            max_value=self.shapes[2] - 1,
             text_template='{value:.0f}',
             label='Z Slice'
         )
@@ -119,8 +119,8 @@ class SlicesTab(HorizonTab):
                                        sync_slice=True)
         self._visualize_slice_z = partial(
             self._visualizer.slice_actors[2].display_extent,
-            x1=0, x2=self._visualizer.data_shape[0] - 1,
-            y1=0, y2=self._visualizer.data_shape[1] - 1)
+            x1=0, x2=self.shapes[0] - 1,
+            y1=0, y2=self.shapes[1] - 1)
 
         self._slice_z.obj.on_value_changed = self._adjust_slice_z
         self._slice_z.obj.on_moving_slider = self._change_slice_z
@@ -222,11 +222,11 @@ class SlicesTab(HorizonTab):
 
         if not sync_slice:
             x = center_relative_value(self._slice_x.selected_value,
-                                      (0, self._visualizer.data_shape[0] - 1))
+                                      (0, self.shapes[0] - 1))
             y = center_relative_value(self._slice_y.selected_value,
-                                      (0, self._visualizer.data_shape[1] - 1))
+                                      (0, self.shapes[1] - 1))
             z = center_relative_value(self._slice_z.selected_value,
-                                      (0, self._visualizer.data_shape[2] - 1))
+                                      (0, self.shapes[2] - 1))
             self.on_slice_change(self._tab_id, x, y, z)
 
         self._visualize_slice_x(x1=self._slice_x.selected_value,
@@ -341,46 +341,24 @@ class SlicesTab(HorizonTab):
         z_slice: float
             z-value where the slicer should be placed relative to center
         """
-        x = zero_relative_value(x_slice,
-                                (0, self._visualizer.data_shape[0] - 1))
-        y = zero_relative_value(y_slice,
-                                (0, self._visualizer.data_shape[1] - 1))
-        z = zero_relative_value(z_slice,
-                                (0, self._visualizer.data_shape[2] - 1))
-        if not self._slice_x.obj.value == x:
-            self._update_slice_visibility(None, self._slice_x, self.actors[0], only_actor=True)
-            if x < 0:
-                x = 0
-            elif x >= self._visualizer.data_shape[0]:
-                x = self._visualizer.data_shape[0] - 1
-            else:
-                self._update_slice_visibility(None, self._slice_x,
-                                              self.actors[0], True, True)
-            self._slice_x.obj.value = x
+        self._update_synchronization(x_slice, self._slice_x, self.actors[0],
+                                     self.shapes[0])
+        self._update_synchronization(y_slice, self._slice_y, self.actors[1],
+                                     self.shapes[1])
+        self._update_synchronization(z_slice, self._slice_z, self.actors[2],
+                                     self.shapes[2])
 
-        if not self._slice_y.obj.value == y:
-            self._update_slice_visibility(None, self._slice_y, self.actors[1], only_actor=True)
-            if y < 0:
-                y = 0
-            elif y >= self._visualizer.data_shape[1]:
-                y = self._visualizer.data_shape[1] - 1
+    def _update_synchronization(self, value, slice, actor, shape):
+        zr_value = zero_relative_value(value, (0, shape - 1))
+        if not slice.obj.value == zr_value:
+            self._update_slice_visibility(None, slice, actor, only_actor=True)
+            if zr_value < 0:
+                zr_value = 0
+            elif zr_value >= shape:
+                zr_value = shape - 1
             else:
-                self._update_slice_visibility(None, self._slice_y, self.actors[1], True, True)
-            self._slice_y.obj.value = y
-
-        if not self._slice_z.obj.value == z:
-            self._update_slice_visibility(None, self._slice_z, self.actors[2], only_actor=True)
-            if z < 0:
-                z = 0
-            elif z >= self._visualizer.data_shape[2]:
-                z = self._visualizer.data_shape[2] - 1
-            else:
-                self._update_slice_visibility(None, self._slice_z, self.actors[2], True, True)
-            self._slice_z.obj.value = z
-
-    # def _update_synchronization(value, slice, actor, shape):
-    #     c = zero_relative_value(value,
-    #                             (0, self._visualizer.data_shape[0] - 1))
+                self._update_slice_visibility(None, slice, actor, True, True)
+            slice.obj.value = zr_value
 
     def build(self, tab_id, _tab_ui):
         """Build all the elements under the tab.
