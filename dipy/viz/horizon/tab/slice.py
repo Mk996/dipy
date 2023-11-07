@@ -39,6 +39,11 @@ class SlicesTab(HorizonTab):
 
         self.on_slice_change = lambda _tab_id, _x, _y, _z: None
 
+        self._opacity_toggle = build_checkbox(
+            labels=[''],
+            checked_labels=[''],
+            on_change=self._toggle_opacity)
+
         self._slice_opacity_label, self._slice_opacity = build_slider(
             initial_value=1.,
             max_value=1.,
@@ -170,6 +175,7 @@ class SlicesTab(HorizonTab):
         self._visualizer.register_picker_callback(self._change_picked_voxel)
 
         self.register_elements(
+            self._opacity_toggle,
             self._slice_opacity_label,
             self._slice_opacity,
             self._slice_x_toggle,
@@ -210,6 +216,15 @@ class SlicesTab(HorizonTab):
 
     def _change_opacity(self, slider):
         self._slice_opacity.selected_value = slider.value
+        self._update_opacities()
+
+    def _toggle_opacity(self, checkbox):
+        if '' in checkbox.checked_labels:
+            self._slice_opacity.selected_value = 1
+            self._slice_opacity.obj.value = 1
+        else:
+            self._slice_opacity.selected_value = 0
+            self._slice_opacity.obj.value = 0
         self._update_opacities()
 
     def _change_picked_voxel(self, message):
@@ -329,6 +344,11 @@ class SlicesTab(HorizonTab):
             slice_actor.GetProperty().SetOpacity(
                 self._slice_opacity.selected_value)
 
+    def on_tab_selected(self):
+        self._slice_x.obj.set_visibility(self._slice_x.visibility)
+        self._slice_y.obj.set_visibility(self._slice_y.visibility)
+        self._slice_z.obj.set_visibility(self._slice_z.visibility)
+
     def update_slices(self, x_slice, y_slice, z_slice):
         """Updates slicer positions.
 
@@ -377,6 +397,7 @@ class SlicesTab(HorizonTab):
         self._tab_id = tab_id
 
         x_pos = .02
+        self._opacity_toggle.position = (x_pos, .85)
         self._slice_x_toggle.position = (x_pos, .62)
         self._slice_y_toggle.position = (x_pos, .38)
         self._slice_z_toggle.position = (x_pos, .15)
