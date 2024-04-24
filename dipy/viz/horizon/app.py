@@ -535,7 +535,7 @@ class Horizon:
                 sync_volumes=sync_vol,
                 sync_peaks=sync_peaks)
 
-            scene.add(self.__tab_mgr.tab_ui)
+            scene.add(self.__tab_mgr.tab_ui.obj)
             self.__tab_mgr.handle_text_overflows()
             self.__tabs[-1].on_tab_selected()
 

@@ -2,6 +2,7 @@ python_sources = [
   '__init__.py',
   'base.py',
   'cluster.py',
+  'manager.py',
   'peak.py',
   'roi.py',
   'slice.py',
