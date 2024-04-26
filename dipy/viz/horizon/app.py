@@ -1,14 +1,20 @@
+from functools import reduce
+import multiprocessing
+import os
 from warnings import warn
 from packaging.version import Version
 
 import numpy as np
 
 from dipy import __version__ as horizon_version
+from dipy.io.image import load_nifti
 from dipy.io.stateful_tractogram import Space, StatefulTractogram
 from dipy.io.streamline import save_tractogram
 from dipy.tracking.streamline import Streamlines
 from dipy.utils.optpkg import optional_package
 from dipy.viz.gmem import GlobalHorizon
+from dipy.viz.horizon.multiprocessing.communication import Observer
+from dipy.viz.horizon.multiprocessing.compute import ComputeProcess
 from dipy.viz.horizon.tab import (ClustersTab, PeaksTab, ROIsTab, SlicesTab,
                                   TabManager, build_label, SurfaceTab)
 from dipy.viz.horizon.visualizer import (ClustersVisualizer, SlicesVisualizer,
@@ -39,7 +45,7 @@ HELP_MESSAGE = """
 """
 
 
-class Horizon:
+class Horizon(Observer):
 
     def __init__(self, tractograms=None, images=None, pams=None, surfaces=None,
                  cluster=False, rgb=False, cluster_thr=15.0,
@@ -129,6 +135,7 @@ class Horizon:
             adaptive visualization, Proceedings of: International Society of
             Magnetic Resonance in Medicine (ISMRM), Montreal, Canada, 2019.
         """
+        super().__init__()
         if not has_fury:
             raise ImportError('Horizon requires FURY. Please install it '
                               'with pip install fury')
@@ -539,6 +546,22 @@ class Horizon:
             self.__tab_mgr.handle_text_overflows()
             self.__tabs[-1].on_tab_selected()
 
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        menu = ui.FileMenu2D(str(current_directory), size=(400, 300))
+        scene.add(menu)
+
+        def file_selected(selections):
+            compute_process = ComputeProcess(
+                target=self.open_nifti,
+                name="NiftiProcess",
+                args=(selections[0]))
+            self.subscribe(compute_process)
+            compute_process.start()
+
+            # print(selections)
+
+        menu.on_selection = file_selected
+
         self.show_m.initialize()
 
         options = [r'un\hide centroids', 'invert selection',
@@ -656,6 +679,24 @@ class Horizon:
             window.record(scene, out_path=self.out_png,
                           size=(1200, 900),
                           reset_camera=False)
+
+    def open_nifti(self, args, kwargs):
+        file = reduce(lambda x, y: x + y, args)
+        data, affine = load_nifti(file)
+        self.images.append((data, affine, file))
+        slices_viz = SlicesVisualizer(
+            self.show_m.iren, self._scene, data, affine=affine,
+            world_coords=self.world_coords, rgb=self.rgb,
+            is_binary=False)
+        tab = SlicesTab(slices_viz, "title", file, self._show_force_render)
+        return (tab, slices_viz)
+
+    def notify(self, observable, *args, **kwargs):
+        # print(kwargs['result'])
+        viz_actors = kwargs['result'][1].slice_actors
+        self._scene.add(*viz_actors)
+        print(multiprocessing.current_process())
+        self.__tab_mgr.add_tab(kwargs['result'][0])
 
 
 def horizon(tractograms=None, images=None, pams=None, surfaces=None,

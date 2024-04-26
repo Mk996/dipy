@@ -11,5 +11,6 @@ py3.install_sources(
 )
 
 
+subdir('multiprocessing')
 subdir('tab')
 subdir('visualizer')

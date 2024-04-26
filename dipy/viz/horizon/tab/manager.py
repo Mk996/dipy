@@ -177,6 +177,7 @@ class TabManager:
         self._render_tabs()
 
     def _render_tabs(self):
+
         self._tab_ui = build_tab_ui(
             (self._x_pad, 5),
             self._tab_size,
@@ -184,8 +185,8 @@ class TabManager:
             active_tab=self._active_tab_id
         )
 
-        for tab in self._tabs:
-            self._render_tab_elements(tab.tab_id, tab.elements)
+        # for tab in self._tabs:
+        #     self._render_tab_elements(tab.tab_id, tab.elements)
 
     def reposition(self, win_size):
         """

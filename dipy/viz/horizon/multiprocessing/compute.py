@@ -1,14 +1,16 @@
-from communication import Observable
 import multiprocessing
+
+from dipy.viz.horizon.multiprocessing.communication import Observable
 
 
 class ComputeProcess(multiprocessing.Process, Observable):
 
-    def __inti__(self, target=None, args=(), kwargs={}):
-        super(multiprocessing.Process, self).__init__(
-            target=target, args=args, kwargs=kwargs)
-        super(Observable, self).__init__()
+    def __init__(self, target=None, name=None, args=(), kwargs={}):
+        self.result = None
+        Observable.__init__(self)
+        multiprocessing.Process.__init__(
+            self, target=target, name=name, args=args, kwargs=kwargs)
 
     def run(self):
-        result = self._target(*self._args, **self._kwargs)
+        result = self._target(self._args, self._kwargs)
         self.notify_observers(result=result)
